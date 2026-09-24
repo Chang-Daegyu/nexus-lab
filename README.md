@@ -36,4 +36,4 @@ GitHub Achievement 발급이나 등급 변경 기능은 없습니다. PR 수를 
 
 ### 검증
 
-외부 API 없는 회귀 테스트 40개를 포함합니다. 로컬에서 `python -m unittest discover -s tests -v`로 실행했습니다. 심볼릭 링크 테스트는 해당 기능이 없는 환경에서 건너뜁니다. GitHub Actions 워크플로는 추가하지 않았습니다.
+외부 API 없는 회귀 테스트 42개를 포함합니다. 로컬에서 `python -m unittest discover -s tests -v`로 실행했습니다. 심볼릭 링크 테스트는 해당 기능이 없는 환경에서 건너뜁니다. GitHub Actions 워크플로는 추가하지 않았습니다.

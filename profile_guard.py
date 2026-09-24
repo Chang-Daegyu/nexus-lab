@@ -89,11 +89,11 @@ def audit_profile(directory: Path, expected_images: int | None = None) -> dict[s
         raise TypeError("예상 이미지 수는 정수여야 합니다.")
     if expected_images is not None and expected_images < 1:
         raise ValueError("예상 이미지 수는 1 이상이어야 합니다.")
-    root = directory.resolve()
     findings: list[str] = []
     records: list[dict[str, Any]] = []
     parser = ProfileParser()
     try:
+        root = directory.resolve()
         readme = (root / "README.md").resolve()
         readme.relative_to(root)
         parser.feed(read_limited(readme))
