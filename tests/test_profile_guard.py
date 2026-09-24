@@ -142,6 +142,53 @@ class ProfileGuardTests(unittest.TestCase):
                 self.assertEqual(main([str(self.root), '--expected-images', str(expected)]), code)
             self.assertEqual(json.loads(output.getvalue())["ok"], code == 0)
 
+    def test_duplicate_src_is_rejected_and_first_value_preserved(self):
+        (self.root / 'second.svg').write_text(SVG, encoding='utf-8')
+        self.write('<img src="card.svg" src="second.svg" alt="카드">')
+        result = self.result(1)
+        self.assertFalse(result['ok'])
+        self.assertEqual(result['images'][0]['source'], 'card.svg')
+        self.assertIn('중복 이미지 속성: src', result['findings'])
+
+    def test_duplicate_alt_is_rejected_even_for_equal_values(self):
+        self.write('<img src="card.svg" alt="카드" alt="카드">')
+        result = self.result()
+        self.assertFalse(result['ok'])
+        self.assertIn('중복 이미지 속성: alt', result['findings'])
+
+    def test_duplicate_attribute_names_are_case_insensitive(self):
+        self.write('<IMG SRC="card.svg" src="card.svg" ALT="카드">')
+        self.assertFalse(self.result()['ok'])
+
+    def test_smil_set_is_detected(self):
+        text = '<svg xmlns="http://www.w3.org/2000/svg"><circle><set attributeName="opacity" to="0" begin="1s" dur="1s"/></circle></svg>'
+        (self.root / 'card.svg').write_text(text, encoding='utf-8')
+        result = self.result()
+        self.assertTrue(result['ok'])
+        self.assertEqual(result['images'][0]['animation_evidence'], ['set'])
+
+    def test_foreign_namespace_set_is_not_animation_evidence(self):
+        text = '<svg xmlns="http://www.w3.org/2000/svg"><set xmlns="urn:other"/></svg>'
+        (self.root / 'card.svg').write_text(text, encoding='utf-8')
+        self.assertFalse(self.result()['ok'])
+
+    def test_css_keyframes_ascii_case_variants(self):
+        for spelling in ('@KEYFRAMES', '@Keyframes', '@kEyFrAmEs'):
+            with self.subTest(spelling=spelling):
+                text = '<svg xmlns="http://www.w3.org/2000/svg"><style>' + spelling + ' pulse {to {opacity:0}}</style></svg>'
+                (self.root / 'card.svg').write_text(text, encoding='utf-8')
+                self.assertTrue(self.result()['ok'])
+
+    def test_css_keyframes_longer_keyword_is_not_matched(self):
+        text = '<svg xmlns="http://www.w3.org/2000/svg"><style>@keyframesExtra pulse {to {opacity:0}}</style></svg>'
+        (self.root / 'card.svg').write_text(text, encoding='utf-8')
+        self.assertFalse(self.result()['ok'])
+
+    def test_css_keyframes_unicode_lookalike_is_not_matched(self):
+        text = '<svg xmlns="http://www.w3.org/2000/svg"><style>@Keyframes pulse {to {opacity:0}}</style></svg>'
+        (self.root / 'card.svg').write_text(text, encoding='utf-8')
+        self.assertFalse(self.result()['ok'])
+
 
 if __name__ == '__main__':
     unittest.main()
