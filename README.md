@@ -8,6 +8,8 @@
 
 Python 3.10 이상에서 외부 패키지나 API 키 없이 실행합니다.
 
+README와 SVG는 UTF-8 및 파일 시작에 BOM이 있는 UTF-8을 지원합니다. 본문 중간의 U+FEFF는 보존하며, 1 MiB 크기 제한에는 BOM 바이트도 포함됩니다.
+
 ```sh
 python profile_guard.py ../Chang-Daegyu --expected-images 6
 python -m unittest discover -s tests -v
@@ -32,4 +34,4 @@ GitHub Achievement 발급이나 등급 변경 기능은 없습니다. PR 수를 
 
 ### 검증
 
-외부 API 없는 회귀 테스트 33개를 포함합니다. 로컬에서 `python -m unittest discover -s tests -v`로 실행했습니다. 심볼릭 링크 테스트는 해당 기능이 없는 환경에서 건너뜁니다. GitHub Actions 워크플로는 추가하지 않았습니다.
+외부 API 없는 회귀 테스트 39개를 포함합니다. 로컬에서 `python -m unittest discover -s tests -v`로 실행했습니다. 심볼릭 링크 테스트는 해당 기능이 없는 환경에서 건너뜁니다. GitHub Actions 워크플로는 추가하지 않았습니다.

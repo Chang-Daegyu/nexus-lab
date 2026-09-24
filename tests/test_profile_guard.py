@@ -190,5 +190,44 @@ class ProfileGuardTests(unittest.TestCase):
         self.assertFalse(self.result()['ok'])
 
 
+    def test_utf8_bom_readme_passes(self):
+        original = (self.root / "README.md").read_bytes()
+        (self.root / "README.md").write_bytes(b"\xef\xbb\xbf" + original)
+        self.assertTrue(self.result(1)["ok"])
+
+    def test_utf8_bom_svg_passes(self):
+        (self.root / "card.svg").write_bytes(b"\xef\xbb\xbf" + SVG.encode("utf-8"))
+        self.assertTrue(self.result(1)["ok"])
+
+    def test_bomless_utf8_and_middle_bom_are_preserved(self):
+        from profile_guard import read_limited
+        for text in ("가나다", "앞\ufeff뒤", "plain text"):
+            with self.subTest(text=text):
+                target = self.root / "text.txt"
+                target.write_bytes(text.encode("utf-8"))
+                self.assertEqual(read_limited(target), text)
+        self.write('<img src="card.svg" alt="카드">\ufeff')
+        self.assertFalse(self.result(1)["ok"])
+
+    def test_invalid_utf8_readme_with_bom_fails(self):
+        for prefix in (b"", b"\xef\xbb\xbf"):
+            with self.subTest(prefix=prefix):
+                (self.root / "README.md").write_bytes(prefix + b"\xff")
+                self.assertFalse(self.result()["ok"])
+
+    def test_bom_counts_toward_raw_byte_limit(self):
+        from profile_guard import read_limited
+        target = self.root / "boundary.txt"
+        target.write_bytes(b"\xef\xbb\xbf" + b" " * (MAX_BYTES - 3))
+        self.assertEqual(read_limited(target), " " * (MAX_BYTES - 3))
+        target.write_bytes(b"\xef\xbb\xbf" + b" " * (MAX_BYTES - 2))
+        with self.assertRaises(ValueError):
+            read_limited(target)
+
+    def test_oversize_readme_with_bom_fails(self):
+        (self.root / "README.md").write_bytes(b"\xef\xbb\xbf" + b" " * (MAX_BYTES - 2))
+        self.assertFalse(self.result()["ok"])
+
+
 if __name__ == '__main__':
     unittest.main()

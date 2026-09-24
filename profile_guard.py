@@ -46,7 +46,7 @@ def read_limited(path: Path) -> str:
         raw = stream.read(MAX_BYTES + 1)
     if len(raw) > MAX_BYTES:
         raise ValueError("파일 크기가 1 MiB를 초과합니다.")
-    return raw.decode("utf-8")
+    return raw.decode("utf-8-sig")
 
 
 def local_svg(root: Path, source: str) -> Path:
