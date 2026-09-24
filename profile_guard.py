@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
@@ -20,12 +21,20 @@ class ProfileParser(HTMLParser):
         self.images: list[dict[str, str | None]] = []
         self.text: list[str] = []
         self.other_tags: set[str] = set()
+        self.duplicate_image_attrs: set[str] = set()
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         if tag not in ALLOWED_TAGS:
             self.other_tags.add(tag)
         if tag == "img":
-            self.images.append(dict(attrs))
+            # Keep the first attribute, as HTML does, and reject ambiguity.
+            image: dict[str, str | None] = {}
+            for name, value in attrs:
+                if name in image:
+                    self.duplicate_image_attrs.add(name)
+                else:
+                    image[name] = value
+            self.images.append(image)
 
     def handle_data(self, data: str) -> None:
         if data.strip():
@@ -66,10 +75,12 @@ def animation_evidence(text: str) -> list[str]:
     evidence: set[str] = set()
     for element in svg.iter():
         tag = element.tag
-        if tag in {f"{{{SVG_NS}}}{name}" for name in ("animate", "animateTransform", "animateMotion")}:
+        if tag in {f"{{{SVG_NS}}}{name}" for name in ("animate", "animateTransform", "animateMotion", "set")}:
             evidence.add(tag.rsplit("}", 1)[-1])
-        if tag == f"{{{SVG_NS}}}style" and "@keyframes" in "".join(element.itertext()):
-            evidence.add("css-keyframes")
+        if tag == f"{{{SVG_NS}}}style":
+            css = "".join(element.itertext())
+            if re.search(r"@keyframes\b", css, flags=re.IGNORECASE | re.ASCII):
+                evidence.add("css-keyframes")
     return sorted(evidence)
 
 
@@ -91,6 +102,8 @@ def audit_profile(directory: Path, expected_images: int | None = None) -> dict[s
         findings.append("이미지 밖에 정적 텍스트가 있습니다.")
     if parser.other_tags:
         findings.append("허용하지 않는 HTML 태그: " + ", ".join(sorted(parser.other_tags)))
+    if parser.duplicate_image_attrs:
+        findings.append("중복 이미지 속성: " + ", ".join(sorted(parser.duplicate_image_attrs)))
     if not parser.images:
         findings.append("이미지 카드가 없습니다.")
     if expected_images is not None and len(parser.images) != expected_images:
