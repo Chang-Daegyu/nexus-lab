@@ -51,6 +51,22 @@ class ProfileGuardTests(unittest.TestCase):
         (self.root / "README.md").unlink()
         self.assertFalse(self.result()["ok"])
 
+    def test_directory_resolution_error_returns_api_result(self):
+        with mock.patch.object(Path, "resolve", side_effect=OSError("resolve failed")):
+            result = self.result()
+        self.assertFalse(result["ok"])
+        self.assertIn("README 읽기 실패: resolve failed", result["findings"])
+
+    def test_directory_resolution_error_returns_cli_json(self):
+        output = io.StringIO()
+        with mock.patch.object(Path, "resolve", side_effect=OSError("resolve failed")), \
+                contextlib.redirect_stdout(output):
+            code = main([str(self.root)])
+        self.assertEqual(code, 1)
+        result = json.loads(output.getvalue())
+        self.assertFalse(result["ok"])
+        self.assertIn("README 읽기 실패: resolve failed", result["findings"])
+
     def test_missing_image_fails(self):
         (self.root / "card.svg").unlink()
         self.assertFalse(self.result()["ok"])
