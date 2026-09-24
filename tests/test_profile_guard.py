@@ -5,6 +5,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from profile_guard import MAX_BYTES, audit_profile, main
 
@@ -131,9 +132,29 @@ class ProfileGuardTests(unittest.TestCase):
         (self.root / "card.svg").write_bytes(b'\xff')
         self.assertFalse(self.result()["ok"])
 
-    def test_invalid_expected_count_raises(self):
-        with self.assertRaises(ValueError):
-            self.result(0)
+    def test_invalid_expected_count_raises_before_reading_files(self):
+        invalid_types = (True, False, 1.0, float('nan'), float('inf'),
+                         '1', [], {}, (1,), {1})
+        for value in invalid_types:
+            with self.subTest(value=value), \
+                    mock.patch('profile_guard.read_limited') as read_limited:
+                with self.assertRaises(TypeError):
+                    self.result(value)
+                read_limited.assert_not_called()
+
+        for value in (0, -1):
+            with self.subTest(value=value), \
+                    mock.patch('profile_guard.read_limited') as read_limited:
+                with self.assertRaises(ValueError):
+                    self.result(value)
+                read_limited.assert_not_called()
+
+    def test_expected_count_accepts_none_and_positive_ints(self):
+        for value in (None, 1, 2):
+            with self.subTest(value=value):
+                result = self.result(value)
+                self.assertEqual(result['image_count'], 1)
+                self.assertEqual(result['ok'], value in (None, 1))
 
     def test_cli_pass_and_fail(self):
         for expected, code in ((1, 0), (6, 1)):

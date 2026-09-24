@@ -17,6 +17,8 @@ python -m unittest discover -s tests -v
 
 검사가 통과하면 종료 코드 `0`, 문제가 있으면 `1`을 반환합니다. 옵션 사용 오류는 `2`입니다. 결과는 JSON으로 출력하며, 파일을 수정하거나 네트워크 요청을 보내지 않습니다.
 
+Python에서 `audit_profile`을 직접 호출할 때 `expected_images`는 `None` 또는 `bool`이 아닌 1 이상의 `int`만 허용합니다. 다른 타입은 `TypeError`, 0 이하의 정수는 `ValueError`를 발생시키며, 입력 검증은 파일을 읽기 전에 수행됩니다.
+
 ### 검사 항목
 
 - 이미지 밖의 정적 텍스트와 허용하지 않은 HTML 태그
@@ -34,4 +36,4 @@ GitHub Achievement 발급이나 등급 변경 기능은 없습니다. PR 수를 
 
 ### 검증
 
-외부 API 없는 회귀 테스트 39개를 포함합니다. 로컬에서 `python -m unittest discover -s tests -v`로 실행했습니다. 심볼릭 링크 테스트는 해당 기능이 없는 환경에서 건너뜁니다. GitHub Actions 워크플로는 추가하지 않았습니다.
+외부 API 없는 회귀 테스트 40개를 포함합니다. 로컬에서 `python -m unittest discover -s tests -v`로 실행했습니다. 심볼릭 링크 테스트는 해당 기능이 없는 환경에서 건너뜁니다. GitHub Actions 워크플로는 추가하지 않았습니다.

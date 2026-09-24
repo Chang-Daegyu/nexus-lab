@@ -85,6 +85,8 @@ def animation_evidence(text: str) -> list[str]:
 
 
 def audit_profile(directory: Path, expected_images: int | None = None) -> dict[str, Any]:
+    if expected_images is not None and type(expected_images) is not int:
+        raise TypeError("예상 이미지 수는 정수여야 합니다.")
     if expected_images is not None and expected_images < 1:
         raise ValueError("예상 이미지 수는 1 이상이어야 합니다.")
     root = directory.resolve()
